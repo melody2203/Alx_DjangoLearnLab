@@ -1,25 +1,19 @@
-import os
-import django
-
-# Setup Django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_models.settings")
-django.setup()
+# relationship_app/query_samples.py
 
 from relationship_app.models import Author, Book, Library, Librarian
 
-# ---- Sample Queries ---- #
-
 # 1. Query all books by a specific author
-author = Author.objects.get(name="J.K. Rowling")
-books_by_author = author.books.all()
-print("Books by J.K. Rowling:", [book.title for book in books_by_author])
+def get_books_by_author(author_name):
+    author = Author.objects.get(name=author_name)
+    return Book.objects.filter(author=author)
 
 # 2. List all books in a library
-library = Library.objects.get(name="Central Library")
-books_in_library = library.books.all()
-print("Books in Central Library:", [book.title for book in books_in_library])
+def get_books_in_library(library_name):
+    library = Library.objects.get(name=library_name)  # ✅ this is the missing line
+    return library.books.all()
 
 # 3. Retrieve the librarian for a library
-library = Library.objects.get(name="Central Library")
-librarian = library.librarian  # OneToOne relation
-print(f"Librarian of {library.name}:", librarian.name)
+def get_librarian_for_library(library_name):
+    library = Library.objects.get(name=library_name)
+    return library.librarian
+
