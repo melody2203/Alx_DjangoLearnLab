@@ -3,9 +3,6 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-# Create your models here.
-from django.db import models
-
 class Author(models.Model):
     name = models.CharField(max_length=100)
 
@@ -48,14 +45,14 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.role}"
     
-
-
-# Automatically create a UserProfile when a new User is created
 @receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
+def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created:
-        UserProfile.objects.create(user=instance, role="Member")
+        # Automatically create profile for new user
+        role = getattr(instance, 'role', 'Member')
+        UserProfile.objects.create(user=instance, role=role)
+    else:
+        # Save existing profile safely
+        if hasattr(instance, 'userprofile'):
+            instance.userprofile.save()
 
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    instance.userprofile.save()
