@@ -7,4 +7,7 @@ def is_admin(user):
 @login_required
 @user_passes_test(is_admin)
 def admin_view(request):
-    return render(request, "relationship_app/admin_view.html")
+    print("=== ADMIN VIEW ACCESSED ===")
+    print(f"User: {request.user.username}")
+    print(f"Role: {request.user.userprofile.role}")
+    return render(request, 'relationship_app/admin_view.html')

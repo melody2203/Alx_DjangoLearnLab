@@ -46,13 +46,14 @@ class UserProfile(models.Model):
         return f"{self.user.username} - {self.role}"
     
 @receiver(post_save, sender=User)
+@receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created:
-        # Automatically create profile for new user
-        role = getattr(instance, 'role', 'Member')
-        UserProfile.objects.create(user=instance, role=role)
+        UserProfile.objects.get_or_create(user=instance)
     else:
-        # Save existing profile safely
+        # Only save if profile exists
         if hasattr(instance, 'userprofile'):
             instance.userprofile.save()
-
+        else:
+            # Create profile if it doesn't exist
+            UserProfile.objects.get_or_create(user=instance)
