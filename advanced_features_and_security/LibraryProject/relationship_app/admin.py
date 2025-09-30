@@ -1,16 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
-from .models import CustomUser
-from .models import UserProfile
+from .models import CustomUser, Author, Book, Library, Librarian 
 
-@admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'role']
-    list_filter = ['role']
 class CustomUserAdmin(UserAdmin):
-    """Define admin model for custom User model with no username field."""
-    
     model = CustomUser
     list_display = ('email', 'first_name', 'last_name', 'date_of_birth', 'is_staff', 'is_active')
     list_filter = ('is_staff', 'is_active', 'date_joined')
@@ -28,6 +21,14 @@ class CustomUserAdmin(UserAdmin):
     )
     search_fields = ('email', 'first_name', 'last_name')
     ordering = ('email',)
-    filter_horizontal = ('groups', 'user_permissions',)
+
+# @admin.register(UserProfile)
+# class UserProfileAdmin(admin.ModelAdmin):
+#     list_display = ('user', 'role')
+#     list_filter = ('role',)
 
 admin.site.register(CustomUser, CustomUserAdmin)
+admin.site.register(Author)
+admin.site.register(Book)
+admin.site.register(Library)
+admin.site.register(Librarian)
