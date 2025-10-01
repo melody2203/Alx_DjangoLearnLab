@@ -12,4 +12,6 @@ urlpatterns = [
     path('search/', views.search_books, name='search_books'),
     path('form-examples/', views.form_examples, name='form_examples'),
     path('form-examples/', views.form_examples, name='form_examples'),
+    path('example-form/', views.example_form_view, name='example_form'),
+    path('form-success/', views.form_success, name='form_success'),
 ]
