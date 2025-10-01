@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -49,12 +50,41 @@ class CustomUser(AbstractUser):
         verbose_name = _('user')
         verbose_name_plural = _('users')
 
-# Keep your existing Book model
 class Book(models.Model):
     title = models.CharField(max_length=200)
     author = models.CharField(max_length=100)
     publication_year = models.IntegerField()
+    added_by = models.ForeignKey(
+        CustomUser, 
+        on_delete=models.CASCADE, 
+        related_name='books_added'
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_public = models.BooleanField(default=True)
+
+    class Meta:
+        # Define custom permissions as specified in the task
+        permissions = [
+            ("can_view", "Can view books"),
+            ("can_create", "Can create books"),
+            ("can_edit", "Can edit books"),
+            ("can_delete", "Can delete books"),
+        ]
 
     def __str__(self):
         return f"{self.title} by {self.author} ({self.publication_year})"
+
+    # Object-level permission methods
+    def has_view_permission(self, user):
+        """Check if user has permission to view this specific book"""
+        return user.has_perm('bookshelf.can_view') or self.added_by == user or self.is_public
+
+    def has_edit_permission(self, user):
+        """Check if user has permission to edit this specific book"""
+        return user.has_perm('bookshelf.can_edit') or self.added_by == user
+
+    def has_delete_permission(self, user):
+        """Check if user has permission to delete this specific book"""
+        return user.has_perm('bookshelf.can_delete') or self.added_by == user
     
