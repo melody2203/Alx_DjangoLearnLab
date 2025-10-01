@@ -1,17 +1,14 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.shortcuts import redirect
+from django.views.generic import RedirectView
 from django.urls import path
-from . import views
+from django.shortcuts import redirect
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path('books/', include('bookshelf.urls')),  # Include bookshelf app URLs
+    path('', RedirectView.as_view(url='/books/', permanent=True)),  # Redirect root to books
     path('', lambda request: redirect('admin/')),
     path("", include("relationship_app.urls")),
     path("roles/", include('relationship_app.urls')),
-    path('', views.book_list, name='book_list'),
-    path('create/', views.book_create, name='book_create'),
-    path('<int:pk>/edit/', views.book_edit, name='book_edit'),
-    path('<int:pk>/delete/', views.book_delete, name='book_delete'),
-    path('my-books/', views.my_books, name='my_books'),
 ]

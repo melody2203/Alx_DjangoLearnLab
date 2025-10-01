@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django.conf import settings
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -55,9 +56,11 @@ class Book(models.Model):
     author = models.CharField(max_length=100)
     publication_year = models.IntegerField()
     added_by = models.ForeignKey(
-        CustomUser, 
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE, 
-        related_name='books_added'
+        related_name='books_added',
+        null=True,  # Make it nullable temporarily
+        blank=True  # Allow blank in forms
     )
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
