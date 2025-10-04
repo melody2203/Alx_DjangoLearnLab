@@ -10,6 +10,19 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+"""
+Authentication & Permissions Configuration:
+
+1. Token Authentication: Users get a token via /api/auth-token/
+2. Default Permission: All endpoints require authentication unless specified
+3. Public Endpoints: /api/books/ (read-only)
+4. Protected Endpoints: /api/books_all/ (full CRUD with authentication)
+
+To use:
+1. Obtain token: POST /api/auth-token/ with username/password
+2. Use token: Include header: Authorization: Token efb8a1a3b5b991e0db6de03933b4fcaeeaac8d14 
+"""
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,7 +40,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -38,7 +50,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'api'
+    'rest_framework.authtoken',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -51,6 +64,15 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',  # Optional, for browsable API
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',  # Default to require authentication
+    ],
+}
 ROOT_URLCONF = 'api_project.urls'
 
 TEMPLATES = [
