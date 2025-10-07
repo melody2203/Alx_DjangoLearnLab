@@ -21,7 +21,7 @@ Editors
     Access: Can view, create, and edit books (can edit their own books)
 Admins
     Permissions: can_view, can_create, can_edit, can_delete
-    Access: Full access to all book operation
+    Access: Full access to all book operations
 Custom Permissions
 The Book model defines these custom permissions:
     can_view: Permission to view books
