@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'api',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -51,7 +52,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'advanced-api-project.urls'
+ROOT_URLCONF = 'advanced_api_project.urls'
 
 TEMPLATES = [
     {
@@ -68,7 +69,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'advanced-api-project.wsgi.application'
+WSGI_APPLICATION = 'advanced_api_project.wsgi.application'
 
 
 # Database
