@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
-from .permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 class BookListView(generics.ListAPIView):
     """
     ListView for retrieving all books with filtering and search capabilities.
@@ -29,7 +29,7 @@ class BookDetailView(generics.RetrieveAPIView):
     """
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = [permissions.AllowAny]  # Allow anyone to view book details
+    permission_classes = [IsAuthenticated]  # Allow anyone to view book details
 
 
 class BookCreateView(generics.CreateAPIView):
