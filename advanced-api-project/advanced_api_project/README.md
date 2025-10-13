@@ -62,3 +62,51 @@ PUT /api/books/1/update/
 
 # Delete book (authenticated only)
 DELETE /api/books/1/delete/
+
+## Testing Documentation
+
+### Test Strategy
+
+Our testing approach covers:
+
+1. **Authentication & Permissions**: Verify access control for authenticated vs unauthenticated users
+2. **CRUD Operations**: Test create, read, update, delete functionality
+3. **Filtering, Searching, Ordering**: Test advanced query capabilities
+4. **Error Handling**: Test edge cases and error responses
+5. **Model Relationships**: Verify database relationships work correctly
+
+### Test Cases Overview
+
+#### Authentication Tests
+- Unauthenticated users can read but not write
+- Authenticated users can perform all CRUD operations
+- Proper status codes for unauthorized access (401/403)
+
+#### Book API Tests
+- Create book with valid/invalid data
+- Retrieve single book and book list
+- Update existing books
+- Delete books
+- Filter by publication year and author
+- Search by title and author name
+- Order by title, publication year, author name
+
+#### Author API Tests
+- Retrieve author list with nested books
+- Retrieve single author with books
+
+### Running Tests
+
+```bash
+# Run all tests
+python manage.py test api
+
+# Run with verbose output
+python manage.py test api -v 2
+
+# Run specific test case
+python manage.py test api.tests.BookAPITestCase
+
+# Run with coverage report (if coverage.py installed)
+coverage run manage.py test api
+coverage report
