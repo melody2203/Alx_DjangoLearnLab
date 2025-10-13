@@ -25,31 +25,13 @@
                     <a class="nav-link" href="{% url 'blog-home' %}">Home</a>
                 </li>
             </ul>
-            <ul class="navbar-nav ms-auto">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'blog-home' %}">Home</a>
+                </li>
                 {% if user.is_authenticated %}
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'profile' %}">
-                        <i class="fas fa-user"></i> {{ user.username }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <form method="post" action="{% url 'logout' %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-link nav-link" style="border: none; background: none;">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </button>
-                    </form>
-                </li>
-                {% else %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'login' %}">
-                        <i class="fas fa-sign-in-alt"></i> Login
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'register' %}">
-                        <i class="fas fa-user-plus"></i> Register
-                    </a>
+                    <a class="nav-link" href="{% url 'post-create' %}">New Post</a>
                 </li>
                 {% endif %}
             </ul>

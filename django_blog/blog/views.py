@@ -1,17 +1,15 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
-from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.models import User
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm, PostForm
 from .models import Post, Profile
 
-def home(request):
-    context = {
-        'posts': Post.objects.all()
-    }
-    return render(request, 'blog/home.html', context)
-
+# Function-based views for authentication
 def register(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
@@ -73,3 +71,62 @@ def profile(request):
         'profile_form': profile_form
     }
     return render(request, 'blog/profile.html', context)
+
+# Class-based views for Post CRUD operations
+class PostListView(ListView):
+    model = Post
+    template_name = 'blog/home.html'
+    context_object_name = 'posts'
+    ordering = ['-date_posted']
+    paginate_by = 5
+
+class PostDetailView(DetailView):
+    model = Post
+    template_name = 'blog/post_detail.html'
+
+class PostCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/post_form.html'
+    
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        messages.success(self.request, 'Your post has been created!')
+        return super().form_valid(form)
+
+class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/post_form.html'
+    
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        messages.success(self.request, 'Your post has been updated!')
+        return super().form_valid(form)
+    
+    def test_func(self):
+        post = self.get_object()
+        return self.request.user == post.author
+
+class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Post
+    template_name = 'blog/post_confirm_delete.html'
+    success_url = '/'
+    
+    def test_func(self):
+        post = self.get_object()
+        return self.request.user == post.author
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, 'Your post has been deleted!')
+        return super().delete(request, *args, **kwargs)
+
+class UserPostListView(ListView):
+    model = Post
+    template_name = 'blog/user_posts.html'
+    context_object_name = 'posts'
+    paginate_by = 5
+    
+    def get_queryset(self):
+        user = get_object_or_404(User, username=self.kwargs.get('username'))
+        return Post.objects.filter(author=user).order_by('-date_posted')

@@ -1,0 +1,47 @@
+{% extends "blog/base.html" %}
+
+{% block title %}{{ object.title }}{% endblock %}
+
+{% block content %}
+<article class="card shadow">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h1 class="card-title display-6">{{ object.title }}</h1>
+                <div class="text-muted mb-3">
+                    <small>
+                        <i class="fas fa-user"></i> 
+                        <a href="{% url 'user-posts' object.author.username %}" class="text-decoration-none">
+                            {{ object.author.username }}
+                        </a>
+                        <i class="fas fa-calendar ms-2"></i> {{ object.date_posted|date:"F d, Y" }}
+                        {% if object.date_updated != object.date_posted %}
+                        <i class="fas fa-edit ms-2" title="Updated"></i> {{ object.date_updated|date:"F d, Y" }}
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+            {% if user == object.author %}
+            <div class="btn-group">
+                <a href="{% url 'post-update' object.pk %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+                <a href="{% url 'post-delete' object.pk %}" class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-trash"></i> Delete
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="post-content">
+            {{ object.content|linebreaks }}
+        </div>
+
+        <div class="mt-4 pt-3 border-top">
+            <a href="{% url 'blog-home' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Posts
+            </a>
+        </div>
+    </div>
+</article>
+{% endblock %}
