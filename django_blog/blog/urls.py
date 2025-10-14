@@ -10,14 +10,13 @@ from .views import (
     CommentUpdateView,
     CommentDeleteView,
     PostSearchView,
-    PostsByTagView,
+    PostByTagListView,
     TagListView,
     register,
     user_login,
     user_logout,
     profile
 )
-PostByTagListView = PostsByTagView
 
 urlpatterns = [
     # Post URLs
@@ -28,15 +27,15 @@ urlpatterns = [
     path('post/<int:pk>/update/', PostUpdateView.as_view(), name='post-update'),
     path('post/<int:pk>/delete/', PostDeleteView.as_view(), name='post-delete'),
     
-    # Comment URLs - Updated to use pk instead of post_id
+    # Comment URLs
     path('post/<int:pk>/comments/new/', CommentCreateView.as_view(), name='comment-create'),
     path('comment/<int:pk>/update/', CommentUpdateView.as_view(), name='comment-update'),
     path('comment/<int:pk>/delete/', CommentDeleteView.as_view(), name='comment-delete'),
-
+    
     # Search and Tag URLs
     path('search/', PostSearchView.as_view(), name='post-search'),
     path('tags/', TagListView.as_view(), name='tag-list'),
-    path('tags/<slug:tag_slug>/', PostsByTagView.as_view(), name='posts-by-tag'),
+    path('tags/<slug:tag_slug>/', PostByTagListView.as_view(), name='posts-by-tag'),  # Use renamed view
     
     # Authentication URLs
     path('register/', register, name='register'),

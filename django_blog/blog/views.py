@@ -215,8 +215,8 @@ class PostSearchView(ListView):
         context['results_count'] = self.get_queryset().count()
         return context
 
-# Posts by Tag View
-class PostsByTagView(ListView):
+# Posts by Tag View - RENAMED to match expected name
+class PostByTagListView(ListView):
     model = Post
     template_name = 'blog/posts_by_tag.html'
     context_object_name = 'posts'
