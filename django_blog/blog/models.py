@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
+from taggit.managers import TaggableManager
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -18,6 +19,7 @@ class Post(models.Model):
     date_posted = models.DateTimeField(default=timezone.now)
     date_updated = models.DateTimeField(auto_now=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
+    tags = TaggableManager(blank=True)  # Add tags field
     
     def __str__(self):
         return self.title

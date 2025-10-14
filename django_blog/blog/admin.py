@@ -4,8 +4,8 @@ from .models import Post, Profile, Comment
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     list_display = ('title', 'author', 'date_posted', 'date_updated')
-    list_filter = ('date_posted', 'author')
-    search_fields = ('title', 'content')
+    list_filter = ('date_posted', 'author', 'tags')
+    search_fields = ('title', 'content', 'tags__name')
     date_hierarchy = 'date_posted'
     ordering = ('-date_posted',)
 

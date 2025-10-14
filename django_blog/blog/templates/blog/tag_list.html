@@ -1,0 +1,48 @@
+{% extends "blog/base.html" %}
+
+{% block title %}All Tags{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1 class="mb-4">
+            <i class="fas fa-tags"></i> All Tags
+        </h1>
+        
+        <div class="alert alert-info">
+            Browse posts by tags. Click on any tag to see related posts.
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                {% for tag in tags %}
+                <a href="{% url 'posts-by-tag' tag.slug %}" class="badge bg-primary text-decoration-none me-2 mb-2 fs-6">
+                    {{ tag.name }}
+                </a>
+                {% empty %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-tags fa-3x mb-3"></i>
+                    <p>No tags available yet.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Tag Navigation</h5>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'blog-home' %}" class="btn btn-outline-primary btn-sm mb-2">
+                    <i class="fas fa-arrow-left"></i> Back to Posts
+                </a>
+                <a href="{% url 'post-search' %}" class="btn btn-outline-success btn-sm mb-2">
+                    <i class="fas fa-search"></i> Search Posts
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

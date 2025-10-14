@@ -5,8 +5,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
-from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+from django.db.models import Q
+from taggit.models import Tag
 from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm, PostForm, CommentForm, CommentUpdateForm
 from .models import Post, Profile, Comment
 
@@ -131,7 +133,8 @@ class UserPostListView(ListView):
     def get_queryset(self):
         user = get_object_or_404(User, username=self.kwargs.get('username'))
         return Post.objects.filter(author=user).order_by('-date_posted')
-# Comment Create View - Updated to use post_id
+
+# Comment Create View - Updated to use pk
 class CommentCreateView(LoginRequiredMixin, CreateView):
     model = Comment
     form_class = CommentForm
@@ -139,13 +142,12 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
     
     def form_valid(self, form):
         form.instance.author = self.request.user
-        form.instance.post = get_object_or_404(Post, pk=self.kwargs['post_id'])
+        form.instance.post = get_object_or_404(Post, pk=self.kwargs['pk'])
         messages.success(self.request, 'Your comment has been added!')
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse_lazy('post-detail', kwargs={'pk': self.kwargs['post_id']})
-
+        return reverse_lazy('post-detail', kwargs={'pk': self.kwargs['pk']})
 # Comment Update View
 class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Comment
@@ -189,3 +191,54 @@ class PostDetailView(DetailView):
         context['comment_form'] = CommentForm()
         context['comments'] = self.object.comments.all()
         return context
+# Search View
+class PostSearchView(ListView):
+    model = Post
+    template_name = 'blog/search_results.html'
+    context_object_name = 'posts'
+    paginate_by = 5
+    
+    def get_queryset(self):
+        query = self.request.GET.get('q')
+        if query:
+            # Search in title, content, and tags
+            return Post.objects.filter(
+                Q(title__icontains=query) |
+                Q(content__icontains=query) |
+                Q(tags__name__icontains=query)
+            ).distinct().order_by('-date_posted')
+        return Post.objects.none()
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['query'] = self.request.GET.get('q', '')
+        context['results_count'] = self.get_queryset().count()
+        return context
+
+# Posts by Tag View
+class PostsByTagView(ListView):
+    model = Post
+    template_name = 'blog/posts_by_tag.html'
+    context_object_name = 'posts'
+    paginate_by = 5
+    
+    def get_queryset(self):
+        tag_slug = self.kwargs.get('tag_slug')
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        return Post.objects.filter(tags__in=[tag]).order_by('-date_posted')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        tag_slug = self.kwargs.get('tag_slug')
+        context['tag'] = get_object_or_404(Tag, slug=tag_slug)
+        return context
+
+# Tag List View
+class TagListView(ListView):
+    model = Tag
+    template_name = 'blog/tag_list.html'
+    context_object_name = 'tags'
+    
+    def get_queryset(self):
+        # Get tags that are actually used in posts
+        return Tag.objects.filter(post__isnull=False).distinct().order_by('name')
