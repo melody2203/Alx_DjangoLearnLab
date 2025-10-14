@@ -1,7 +1,11 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import authenticate
+from django.contrib.auth import get_user_model
+from rest_framework.authtoken.models import Token
 from .models import CustomUser
+
+User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     followers_count = serializers.ReadOnlyField()
@@ -31,7 +35,10 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password2')
-        user = CustomUser.objects.create_user(**validated_data)
+        # Use get_user_model().objects.create_user as required
+        user = User.objects.create_user(**validated_data)
+        # Create token as required
+        Token.objects.create(user=user)
         return user
 
 class LoginSerializer(serializers.Serializer):
@@ -47,6 +54,8 @@ class LoginSerializer(serializers.Serializer):
             if user:
                 if user.is_active:
                     data['user'] = user
+                    # Ensure token exists
+                    Token.objects.get_or_create(user=user)
                 else:
                     raise serializers.ValidationError("User account is disabled.")
             else:

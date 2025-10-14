@@ -3,11 +3,14 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
+from django.contrib.auth import get_user_model
 from .models import CustomUser
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
 
+User = get_user_model()
+
 class RegisterView(generics.CreateAPIView):
-    queryset = CustomUser.objects.all()
+    queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -16,8 +19,8 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         
-        # Create token for the new user
-        token, created = Token.objects.get_or_create(user=user)
+        # Get the token that was created in the serializer
+        token = Token.objects.get(user=user)
         
         return Response({
             'user': UserSerializer(user, context=self.get_serializer_context()).data,
@@ -32,7 +35,7 @@ def login_view(request):
     serializer.is_valid(raise_exception=True)
     
     user = serializer.validated_data['user']
-    token, created = Token.objects.get_or_create(user=user)
+    token = Token.objects.get(user=user)
     
     return Response({
         'user': UserSerializer(user).data,
@@ -48,7 +51,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 class UserDetailView(generics.RetrieveAPIView):
-    queryset = CustomUser.objects.all()
+    queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -56,8 +59,8 @@ class UserDetailView(generics.RetrieveAPIView):
 @permission_classes([permissions.IsAuthenticated])
 def follow_user(request, user_id):
     try:
-        user_to_follow = CustomUser.objects.get(id=user_id)
-    except CustomUser.DoesNotExist:
+        user_to_follow = User.objects.get(id=user_id)
+    except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
     
     if request.user != user_to_follow and not request.user.following.filter(id=user_id).exists():
@@ -70,8 +73,8 @@ def follow_user(request, user_id):
 @permission_classes([permissions.IsAuthenticated])
 def unfollow_user(request, user_id):
     try:
-        user_to_unfollow = CustomUser.objects.get(id=user_id)
-    except CustomUser.DoesNotExist:
+        user_to_unfollow = User.objects.get(id=user_id)
+    except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
     
     if request.user.following.filter(id=user_id).exists():
