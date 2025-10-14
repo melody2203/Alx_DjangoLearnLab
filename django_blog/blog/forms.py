@@ -1,7 +1,9 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from .models import Profile, Post, Comment  # Import from models, don't redefine
+from taggit.forms import TagField
+from taggit.models import Tag
+from .models import Profile, Post, Comment
 
 class UserRegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -30,12 +32,28 @@ class ProfileUpdateForm(forms.ModelForm):
         fields = ['bio', 'location', 'birth_date']
 
 class PostForm(forms.ModelForm):
+    tags = TagField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Add tags separated by commas...'
+        }),
+        help_text="Add tags separated by commas"
+    )
+    
     class Meta:
         model = Post
-        fields = ['title', 'content']
+        fields = ['title', 'content', 'tags']
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter post title'}),
-            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 10, 'placeholder': 'Write your post content here...'}),
+            'title': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter post title'
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 10, 
+                'placeholder': 'Write your post content here...'
+            }),
         }
     
     def clean_title(self):
