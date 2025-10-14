@@ -131,7 +131,7 @@ class UserPostListView(ListView):
     def get_queryset(self):
         user = get_object_or_404(User, username=self.kwargs.get('username'))
         return Post.objects.filter(author=user).order_by('-date_posted')
-# Comment Create View
+# Comment Create View - Updated to use post_id
 class CommentCreateView(LoginRequiredMixin, CreateView):
     model = Comment
     form_class = CommentForm
@@ -139,12 +139,12 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
     
     def form_valid(self, form):
         form.instance.author = self.request.user
-        form.instance.post = get_object_or_404(Post, pk=self.kwargs['pk'])
+        form.instance.post = get_object_or_404(Post, pk=self.kwargs['post_id'])
         messages.success(self.request, 'Your comment has been added!')
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse_lazy('post-detail', kwargs={'pk': self.kwargs['pk']})
+        return reverse_lazy('post-detail', kwargs={'pk': self.kwargs['post_id']})
 
 # Comment Update View
 class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
