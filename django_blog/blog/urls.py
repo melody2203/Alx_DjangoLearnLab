@@ -17,6 +17,7 @@ from .views import (
     user_logout,
     profile
 )
+PostByTagListView = PostsByTagView
 
 urlpatterns = [
     # Post URLs
