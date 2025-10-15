@@ -2,17 +2,19 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Authentication
+    # Authentication URLs
     path('register/', views.RegisterView.as_view(), name='register'),
-    path('login/', views.login_view, name='login'),
+    path('login/', views.LoginView.as_view(), name='login'),
     
-    # User profiles
-    path('profile/', views.UserProfileView.as_view(), name='profile'),
+    # User Profile URLs
+    path('profile/', views.CurrentUserProfileView.as_view(), name='current-user-profile'),
+    path('users/<int:user_id>/profile/', views.UserProfileView.as_view(), name='user-profile'),
     
-    # User details
-    path('users/<int:pk>/', views.UserDetailView.as_view(), name='user-detail'),
+    # Follow/Unfollow URLs
+    path('users/<int:user_id>/follow/', views.FollowUserView.as_view(), name='follow-user'),
+    path('users/<int:user_id>/unfollow/', views.UnfollowUserView.as_view(), name='unfollow-user'),
     
-    # Follow/unfollow
-    path('users/<int:user_id>/follow/', views.follow_user, name='follow-user'),
-    path('users/<int:user_id>/unfollow/', views.unfollow_user, name='unfollow-user'),
+    # Followers/Following URLs
+    path('users/<int:user_id>/followers/', views.UserFollowersView.as_view(), name='user-followers'),
+    path('users/<int:user_id>/following/', views.UserFollowingView.as_view(), name='user-following'),
 ]
