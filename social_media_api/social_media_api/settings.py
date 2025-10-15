@@ -21,7 +21,8 @@ INSTALLED_APPS = [
     'corsheaders',
     
     # Local apps
-    'accounts',  # Make sure this line is present
+    'accounts',
+    'posts', # Make sure this line is present
 ]
 
 MIDDLEWARE = [
@@ -60,14 +61,20 @@ DATABASES = {
     }
 }
 
-# REST Framework Configuration
+# Add to REST_FRAMEWORK configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
     ],
 }
 
