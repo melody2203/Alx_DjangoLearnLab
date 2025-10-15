@@ -19,10 +19,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'django_filters',
     
     # Local apps
     'accounts',
-    'posts', # Make sure this line is present
+    'posts', 
+
 ]
 
 MIDDLEWARE = [

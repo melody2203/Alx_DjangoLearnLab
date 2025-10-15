@@ -9,48 +9,76 @@ from posts.models import Post, Comment
 
 User = get_user_model()
 
-def create_test_posts():
-    print("Creating test posts and comments...")
+def create_follow_test_data():
+    print("Creating follow relationships and feed test data...")
     
-    # Get or create test users
-    user1, created = User.objects.get_or_create(
-        username='alice',
-        defaults={'email': 'alice@example.com', 'first_name': 'Alice', 'last_name': 'Smith'}
-    )
-    if created:
-        user1.set_password('testpass123')
-        user1.save()
+    # Create test users
+    users_data = [
+        {'username': 'alice', 'email': 'alice@example.com', 'first_name': 'Alice', 'last_name': 'Smith'},
+        {'username': 'bob', 'email': 'bob@example.com', 'first_name': 'Bob', 'last_name': 'Johnson'},
+        {'username': 'charlie', 'email': 'charlie@example.com', 'first_name': 'Charlie', 'last_name': 'Brown'},
+        {'username': 'diana', 'email': 'diana@example.com', 'first_name': 'Diana', 'last_name': 'Prince'},
+    ]
     
-    user2, created = User.objects.get_or_create(
-        username='bob',
-        defaults={'email': 'bob@example.com', 'first_name': 'Bob', 'last_name': 'Johnson'}
-    )
-    if created:
-        user2.set_password('testpass123')
-        user2.save()
+    users = {}
+    for user_data in users_data:
+        user, created = User.objects.get_or_create(
+            username=user_data['username'],
+            defaults=user_data
+        )
+        if created:
+            user.set_password('testpass123')
+            user.save()
+            print(f"✅ Created user: {user.username}")
+        users[user.username] = user
     
-    # Create test posts
+    # Create follow relationships
+    follow_relationships = [
+        ('alice', 'bob'),
+        ('alice', 'charlie'),
+        ('bob', 'alice'),
+        ('bob', 'diana'),
+        ('charlie', 'alice'),
+        ('diana', 'alice'),
+        ('diana', 'bob'),
+    ]
+    
+    for follower, followed in follow_relationships:
+        if users[follower].follow(users[followed]):
+            print(f"✅ {follower} is now following {followed}")
+    
+    # Create posts from different users
     posts_data = [
         {
-            'author': user1,
-            'title': 'Welcome to our Social Network!',
-            'content': 'This is our first post. Feel free to share your thoughts and connect with others!'
+            'author': users['alice'],
+            'title': 'Alice: My Morning Routine',
+            'content': 'Started my day with meditation and a healthy breakfast. Feeling great!'
         },
         {
-            'author': user2,
-            'title': 'The Future of Technology',
-            'content': 'I believe AI and machine learning will revolutionize how we interact with technology in the coming years.'
+            'author': users['bob'],
+            'title': 'Bob: Tech News',
+            'content': 'Just read about the latest AI developments. The future is exciting!'
         },
         {
-            'author': user1,
-            'title': 'My Travel Adventures',
-            'content': 'Just returned from an amazing trip to Japan. The culture, food, and people were incredible!'
+            'author': users['charlie'],
+            'title': 'Charlie: Book Review',
+            'content': 'Finished reading "Dune" - an amazing sci-fi masterpiece!'
         },
         {
-            'author': user2,
-            'title': 'Book Recommendations',
-            'content': 'Recently finished "The Three-Body Problem" - highly recommended for sci-fi fans!'
-        }
+            'author': users['diana'],
+            'title': 'Diana: Travel Plans',
+            'content': 'Planning my next trip to Italy. Any recommendations?'
+        },
+        {
+            'author': users['alice'],
+            'title': 'Alice: Work Update',
+            'content': 'Just completed a major project at work. Time to celebrate!'
+        },
+        {
+            'author': users['bob'],
+            'title': 'Bob: Programming Tips',
+            'content': 'Here are my top 5 Python tips for beginners...'
+        },
     ]
     
     for post_data in posts_data:
@@ -62,23 +90,30 @@ def create_test_posts():
             print(f"✅ Created post: {post.title}")
             
             # Create some comments
-            comments_data = [
-                {'author': user2, 'content': 'Great post! Looking forward to more content.'},
-                {'author': user1, 'content': 'Thanks for sharing your thoughts!'},
-            ]
-            
-            for comment_data in comments_data:
-                Comment.objects.create(
-                    post=post,
-                    author=comment_data['author'],
-                    content=comment_data['content']
-                )
-                print(f"✅ Created comment on: {post.title}")
+            comment_authors = [users['bob'], users['charlie'], users['diana']]
+            for comment_author in comment_authors:
+                if comment_author != post.author:  # Don't comment on own posts
+                    Comment.objects.create(
+                        post=post,
+                        author=comment_author,
+                        content=f'Great post, {post.author.first_name}!'
+                    )
     
-    print("\n🎉 Test data creation completed!")
+    print("\n🎉 Follow test data creation completed!")
     print(f"📊 Summary:")
+    print(f"   - Users: {User.objects.count()}")
     print(f"   - Posts: {Post.objects.count()}")
     print(f"   - Comments: {Comment.objects.count()}")
+    print(f"   - Follow relationships: {sum(user.following_count for user in User.objects.all())}")
+    
+    # Show follow relationships
+    print("\n🤝 Follow Relationships:")
+    for user in User.objects.all():
+        following = [u.username for u in user.get_following()]
+        followers = [u.username for u in user.get_followers()]
+        print(f"   {user.username}:")
+        print(f"     Following: {following}")
+        print(f"     Followers: {followers}")
 
 if __name__ == '__main__':
-    create_test_posts()
+    create_follow_test_data()
