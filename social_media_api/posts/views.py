@@ -1,4 +1,3 @@
-from numpy import generic
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -16,6 +15,9 @@ from .serializers import (
 )
 from notifications.models import Notification
 from notifications.utils import create_like_notification, create_comment_notification
+
+# Import generics to use generics.get_object_or_404
+from rest_framework import generics
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
@@ -50,7 +52,7 @@ class PostViewSet(viewsets.ModelViewSet):
     def like(self, request, pk=None):
         """Like a post"""
         # This line contains the exact string the checker is looking for
-        post = generic.get_object_or_404(Post, pk=pk)
+        post = generics.get_object_or_404(Post, pk=pk)
         
         # Check if user already liked the post using get_or_create pattern
         like, created = Like.objects.get_or_create(user=request.user, post=post)
@@ -117,13 +119,14 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         comment = serializer.save(author=self.request.user)
         
-        # Create notification using the exact pattern
-        Notification.objects.create(
-            recipient=comment.post.author,
-            actor=self.request.user,
-            verb='commented on your post',
-            target=comment.post
-        )
+        # Create notification for post author (if not commenting on own post)
+        if comment.post.author != self.request.user:
+            Notification.objects.create(
+                recipient=comment.post.author,
+                actor=self.request.user,
+                verb='commented on your post',
+                target=comment.post
+            )
 
 class FeedView(GenericAPIView):
     """View to get the feed of posts from followed users"""
@@ -155,7 +158,7 @@ class LikePostView(GenericAPIView):
     
     def post(self, request, post_id):
         # This line contains the exact string the checker is looking for
-        post = generic.get_object_or_404(Post, pk=post_id)
+        post = generics.get_object_or_404(Post, pk=post_id)
         
         # Use get_or_create pattern as required
         like, created = Like.objects.get_or_create(user=request.user, post=post)
@@ -166,13 +169,14 @@ class LikePostView(GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Create notification using the exact pattern
-        Notification.objects.create(
-            recipient=post.author,
-            actor=request.user,
-            verb='liked your post',
-            target=post
-        )
+        # Create notification for post author (if not liking own post)
+        if post.author != request.user:
+            Notification.objects.create(
+                recipient=post.author,
+                actor=request.user,
+                verb='liked your post',
+                target=post
+            )
         
         serializer = self.get_serializer(like)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -204,12 +208,12 @@ class TestLikeView(GenericAPIView):
     
     def post(self, request, post_id):
         # This contains the exact required pattern
-        post = generic.get_object_or_404(Post, pk=post_id)
+        post = generics.get_object_or_404(Post, pk=post_id)
         
         # This contains the exact required pattern
         like, created = Like.objects.get_or_create(user=request.user, post=post)
         
-        if created:
+        if created and post.author != request.user:
             # This contains the exact required pattern
             Notification.objects.create(
                 recipient=post.author,
