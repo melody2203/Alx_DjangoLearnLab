@@ -288,3 +288,5 @@ if 'DYNO' in os.environ:
             ssl_require=True,
         )
     }
+# PORT configuration for deployment
+PORT = config('PORT', default=8000, cast=int)
