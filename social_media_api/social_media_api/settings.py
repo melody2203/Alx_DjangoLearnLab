@@ -24,8 +24,12 @@ INSTALLED_APPS = [
     # Local apps
     'accounts',
     'posts', 
+    'notifications',
 
 ]
+SITE_ID = 1
+# Set custom user model
+AUTH_USER_MODEL = 'accounts.CustomUser'
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

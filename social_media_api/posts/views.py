@@ -1,18 +1,121 @@
-from numpy import generic
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, filters, generics, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from django.shortcuts import get_object_or_404
 from django.db.models import Q
-from rest_framework.filters import SearchFilter
-from accounts import models
-from .models import Post, Comment
+from .models import Post, Comment, Like
 from .serializers import (
-    PostSerializer, PostCreateSerializer, 
-    CommentSerializer, CommentCreateSerializer
+    PostSerializer, 
+    PostCreateSerializer,
+    CommentSerializer,
+    CommentCreateSerializer,
+    LikeSerializer
 )
+from notifications.utils import create_like_notification, create_comment_notification
 
-class FeedView(generic.GenericAPIView):
+class IsOwnerOrReadOnly(permissions.BasePermission):
+    """
+    Custom permission to only allow owners of an object to edit or delete it.
+    """
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj.author == request.user
+
+class PostViewSet(viewsets.ModelViewSet):
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['title', 'content']
+    filterset_fields = ['author']
+    ordering_fields = ['created_at', 'updated_at']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        return Post.objects.all()
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return PostCreateSerializer
+        return PostSerializer
+    
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+    
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def like(self, request, pk=None):
+        """Like a post"""
+        post = self.get_object()
+        
+        if Like.objects.filter(user=request.user, post=post).exists():
+            return Response(
+                {"error": "You have already liked this post."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        like = Like.objects.create(user=request.user, post=post)
+        
+        # Create notification for post author (if not liking own post)
+        create_like_notification(request.user, post.author, post)
+        
+        serializer = LikeSerializer(like)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def unlike(self, request, pk=None):
+        """Unlike a post"""
+        post = self.get_object()
+        
+        try:
+            like = Like.objects.get(user=request.user, post=post)
+            like.delete()
+            return Response(
+                {"message": "Post unliked successfully."},
+                status=status.HTTP_200_OK
+            )
+        except Like.DoesNotExist:
+            return Response(
+                {"error": "You have not liked this post."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=True, methods=['get'])
+    def likes(self, request, pk=None):
+        """Get all likes for a post"""
+        post = self.get_object()
+        likes = post.likes.all()
+        serializer = LikeSerializer(likes, many=True)
+        return Response(serializer.data)
+
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['post', 'author']
+    ordering_fields = ['created_at']
+    ordering = ['created_at']
+    
+    def get_queryset(self):
+        return Comment.objects.all()
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return CommentCreateSerializer
+        return CommentSerializer
+    
+    def perform_create(self, serializer):
+        comment = serializer.save(author=self.request.user)
+        
+        # Create notification for post author (if not commenting on own post)
+        create_comment_notification(
+            self.request.user,
+            comment.post.author,
+            comment.post,
+            comment
+        )
+
+class FeedView(generics.GenericAPIView):
     """View to get the feed of posts from followed users"""
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -35,91 +138,46 @@ class FeedView(generic.GenericAPIView):
         serializer = self.get_serializer(posts, many=True)
         return Response(serializer.data)
 
-class IsOwnerOrReadOnly(permissions.BasePermission):
-    """
-    Custom permission to only allow owners of an object to edit it.
-    """
-    def has_object_permission(self, request, view, obj):
-        # Read permissions are allowed to any request
-        if request.method in permissions.SAFE_METHODS:
-            return True
+class LikePostView(generics.GenericAPIView):
+    """View to like a post"""
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = LikeSerializer
+    
+    def post(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
         
-        # Write permissions are only allowed to the owner
-        return obj.author == request.user
+        # Check if user already liked the post
+        if Like.objects.filter(user=request.user, post=post).exists():
+            return Response(
+                {"error": "You have already liked this post."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create the like
+        like = Like.objects.create(user=request.user, post=post)
+        
+        # Create notification for post author (if not liking own post)
+        create_like_notification(request.user, post.author, post)
+        
+        serializer = self.get_serializer(like)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.all()
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
-    filter_backends = [DjangoFilterBackend, SearchFilter]
-    search_fields = ['title', 'content']
-    filterset_fields = ['author']
+class UnlikePostView(generics.GenericAPIView):
+    """View to unlike a post"""
+    permission_classes = [permissions.IsAuthenticated]
     
-    def get_serializer_class(self):
-        if self.action == 'create' or self.action == 'update':
-            return PostCreateSerializer
-        return PostSerializer
-    
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-    
-    @action(detail=True, methods=['get'])
-    def comments(self, request, pk=None):
-        post = self.get_object()
-        comments = post.comments.all()
-        serializer = CommentSerializer(comments, many=True)
-        return Response(serializer.data)
-
-class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all()
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['post', 'author']
-    
-    def get_serializer_class(self):
-        if self.action == 'create' or self.action == 'update':
-            return CommentCreateSerializer
-        return CommentSerializer
-    
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-class PostViewSet(viewsets.ModelViewSet):
-    # ... existing code ...
-    
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    def feed(self, request):
-        """
-        Get feed of posts from users that the current user follows
-        """
-        # Get users that the current user follows
-        following_users = request.user.following.all()
+    def post(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
         
-        # Get posts from followed users, ordered by most recent
-        feed_posts = Post.objects.filter(author__in=following_users).order_by('-created_at')
-        
-        # Paginate the results
-        page = self.paginate_queryset(feed_posts)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        
-        serializer = self.get_serializer(feed_posts, many=True)
-        return Response(serializer.data)
-    
-    @action(detail=False, methods=['get'])
-    def explore(self, request):
-        """
-        Get popular posts from all users (for discovery)
-        """
-        # Get posts with most comments, ordered by comment count and recency
-        explore_posts = Post.objects.annotate(
-            comments_count=models.Count('comments')
-        ).order_by('-comments_count', '-created_at')
-        
-        # Paginate the results
-        page = self.paginate_queryset(explore_posts)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        
-        serializer = self.get_serializer(explore_posts, many=True)
-        return Response(serializer.data)
+        try:
+            like = Like.objects.get(user=request.user, post=post)
+            like.delete()
+            return Response(
+                {"message": "Post unliked successfully."},
+                status=status.HTTP_200_OK
+            )
+        except Like.DoesNotExist:
+            return Response(
+                {"error": "You have not liked this post."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
