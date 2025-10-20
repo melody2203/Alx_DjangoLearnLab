@@ -20,4 +20,5 @@ urlpatterns = [
     
     # Additional URL to show all users
     path('users/', views.UserListView.as_view(), name='user-list'),
+    path('token/', views.CustomAuthToken.as_view(), name='api-token'),
 ]

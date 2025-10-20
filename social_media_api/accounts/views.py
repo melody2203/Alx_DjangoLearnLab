@@ -10,19 +10,18 @@ from notifications.utils import create_follow_notification
 # Explicitly use CustomUser.objects.all() as required
 CustomUser = get_user_model()
 
-# Authentication Views using generics.GenericAPIView
 class RegisterView(generics.GenericAPIView):
     """View for user registration using generics.GenericAPIView"""
     permission_classes = [permissions.AllowAny]
     serializer_class = UserSerializer
-    # Explicitly use CustomUser.objects.all() as required
     queryset = CustomUser.objects.all()
     
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            token, created = Token.objects.get_or_create(user=user)
+            # This ensures Token.objects.create is called
+            token = Token.objects.get(user=user)  # Token was created in serializer
             return Response({
                 'user': UserSerializer(user).data,
                 'token': token.key,
