@@ -135,11 +135,11 @@ class FeedView(GenericAPIView):
     
     def get(self, request):
         # Get posts from users that the current user is following
-        followed_users = request.user.following.all()
+        following_users = request.user.following.all()
         
         # Get posts from followed users, ordered by most recent
         posts = Post.objects.filter(
-            author__in=followed_users
+            author__in=following_users
         ).order_by('-created_at')
         
         # Apply pagination
